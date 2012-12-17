@@ -27,7 +27,7 @@
 translation from the i-ching.
 
 You can even plug in your own randomizer function, and/or hexagram
-grenrator.  This package comes provided with a standard randomizer,
+generator.  This package comes provided with a standard randomizer,
 and a coin generator, but you could (for instance) build a generator
 that grabs a random lolcat from icanhazcheezburger, and turns it into
 a hexagram.")
@@ -1211,7 +1211,7 @@ loosely based on the plum-blossem method."
 (defun i-ching-random-org-randomizer (min max)
   "Pull a random number from http://www.random.org/clients/http/ .
 
-Returns a nubmer between MIN and MAX.
+Returns a number between MIN and MAX.
 
 Uses a cache (`i-ching-random-org-cache') so repeated requests are not made."
   (when (null i-ching-random-org-cache)
