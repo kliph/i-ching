@@ -553,7 +553,7 @@ So far this is just a direct copy of the content from wikipedia."
              "° Nine in the second place means:\nThere is a fish in the tank. No blame.\nDoes not further guests."
              "Nine in the third place means: \nThere is no skin on his thighs,\nAnd walking comes hard.\nIf one is mindful of the danger,\nNo great mistake is made."
              " 	Nine in the fourth place means:\nNo fish in the tank.\nThis leads to misfortune."
-             "  ° Nine in the fifth place means:\nA melon covered with willow leaves.\nHidden lines.\nThen it drops down to one from heave."
+             "  ° Nine in the fifth place means:\nA melon covered with willow leaves.\nHidden lines.\nThen it drops down to one from heaven."
              "Nine at the top means:\nHe comes to meet with his horns.\nHumiliation. No blame.")
    (":::||:" "GATHERING TOGETHER. Success.\nThe king approaches his temple.\nIt furthers one to see the great man.\nThis brings success. Perseverance furthers.\nTo bring great offerings creates good fortune.\nIt furthers one to undertake something."
              "Over the earth, the lake:\nThe image of GATHERING TOGETHER.\nThus the superior man renews his weapons\nIn order to meet the unforeseen."
