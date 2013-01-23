@@ -1,7 +1,8 @@
 ;;; i-ching.el --- Cast an i-ching, and come up with a hexagram.
-(defconst i-ching-version "0.2")
+(defconst i-ching-version "0.3")
 ;; Copyright (c)2008 Jonathan Arkell. (by)(nc)(sa)  Some rights reserved.
 ;; Author: Jonathan Arkell <jonnay@jonnay.net>
+;; Yarrow method contributed by Cliff Rodgers (c) 2012
 
 ;; This file is not part of GNU Emacs.
 
@@ -42,10 +43,10 @@ a hexagram.")
 ;;; TODO:
 ;; - the traditional Chinese casting method based on the date of the Chinese
 ;;   calendar would be hella coo.  Finding info about that is HARD.
-;; - yarrow stalk method
 ;; - buffer method
 
 ;;; CHANGELOG:
+;; v 0.3 - yarrow method
 ;; v 0.2 - Hexagram lookup
 ;;       - Added Translated Judgment and commentary
 ;;       - added random.org randomizer source
@@ -80,9 +81,9 @@ customizing this method, you can choose how the hexigrams are generated.
 Currently the possible values are:
 `i-ching-coin-caster' - Cast the i-ching, with virtual coins.
 
-In the future, these ones will be written:
 `i-ching-yarrow-caster' - Cast the i-ching with virtual yarrow stalks.
 
+In the future, these ones will be written:
 `i-ching-buffer-caster' - Cast the i-ching with the contents of the
     current buffer.
 `i-ching-chinese-date-caster' - Cast using the chinese calendar.
@@ -1065,6 +1066,86 @@ I do not think this is traditional in the i-ching."
 	(7 1)
 	(8 0)
 	(9 3)))
+
+;;* cast yarrow
+(defun i-ching-yarrow-caster ()
+  (list (i-ching-yarrow-helper)
+        (i-ching-yarrow-helper)
+        (i-ching-yarrow-helper)
+        (i-ching-yarrow-helper)
+        (i-ching-yarrow-helper)
+        (i-ching-yarrow-helper)))
+
+;;* cast yarrow
+(defun i-ching-yarrow-helper ()
+  "Helper function for `i-ching-yarrow-caster'."
+  (let* ((stalks 49))                   ; Place one stalk aside as an observer
+    (i-ching-yarrow-split-piles stalks)))
+
+;;* cast yarrow
+(defun i-ching-yarrow-split-piles (stalks)
+  "Splits the stalks into the 3 necessary piles to determine the
+kua or line."
+  (let* ((remainder 0)
+         (first-pile 0)
+         (second-pile 0)
+         (third-pile 0))
+    (setq first-pile (i-ching-yarrow-make-pile stalks)
+          remainder (i-ching-yarrow-calculate-remainder remainder stalks first-pile)
+          second-pile (i-ching-yarrow-make-pile remainder)
+          remainder (i-ching-yarrow-calculate-remainder remainder stalks first-pile second-pile)
+          third-pile (i-ching-yarrow-make-pile remainder))
+    (i-ching-yarrow-determine-kua first-pile second-pile third-pile)))
+
+;;* cast yarrow
+(defun i-ching-yarrow-calculate-remainder (rem total pile &rest more-piles)
+  "Calculates the remainder for `i-ching-yarrow-split-piles'."
+  (setq rem (+ rem (- total (+ pile (apply '+ more-piles))))))
+
+;;* cast yarrow
+(defun i-ching-yarrow-make-pile (stalks)
+  "Simulates tucking the stalks in between fingers and calculates
+the number of stalks in a single pile for `i-ching-yarrow-split-piles'."
+  (let* ((out 0)
+         (table (i-ching-standard-randomizer 2 (1- stalks)))
+         (left-hand (- stalks table)))
+    (setq table (1- table)              ; For the 1 stalk in between
+                                        ; pinky and ring
+          out (1+ out)
+          out (+ (i-ching-yarrow-count-down-by-4 left-hand) out)
+          out (+ (i-ching-yarrow-count-down-by-4 table) out))
+    out))
+
+;;* cast yarrow
+(defun i-ching-yarrow-count-down-by-4 (left-hand)
+  "'Counts' down by 4."
+  (let ((out (mod left-hand 4)))
+    (if (equal out 0)              ; If it's divisible by 4,
+        4                          ; 4 will be left over
+      out)))
+
+;;* cast yarrow
+(defun i-ching-yarrow-determine-kua (first-pile second-pile third-pile)
+  "Determine the appropriate kua or line from the first, second,
+and third piles"
+  (cond ((equalp first-pile 5)
+         (if (equalp second-pile 4)
+             (if (equalp second-pile third-pile)
+                 3                      ; All are small
+               0)                       ; Two are small and one is big
+           (if (equalp second-pile third-pile)
+               1                        ; Two are big and one is small
+             0)))                       ; Two are small and one is big
+        ((equalp first-pile 9)
+         (if (equalp second-pile 8)
+             (if (equalp second-pile third-pile)
+                 2                      ; All are big
+               1)                       ; Two are big and one is small
+           (if (equalp second-pile third-pile)
+               0                        ; Two are small and one is big
+             1)))))                     ; Two are big and one is small
+
+
 
 ;;* cast buffer
 (defun i-ching-buffer-caster ()
