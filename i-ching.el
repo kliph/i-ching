@@ -95,12 +95,18 @@ example."
   :type 'function
   :group 'i-ching)
 
+;;* custom rendering
+(defcustom i-ching-render-unicode-p t
+  "When non-nil, render hexagrams, trigrams, and bigrams as unicode."
+  :type 'boolean
+  :group 'i-ching)
+
 ;;* custom bigram
 (defcustom i-ching-bigram-interpretation
-  '(("::" "Old Yin,    Changing, Winter, Thymine")
+  '(("||" "Old Yang,   Changing, Summer, Adenine")
+    (":|" "Young Yang, Static,   Autumn, Guanine")
     ("|:" "Young Yin,  Static,   Spring, Cytosine")
-	("||" "Old Yang,   Changing, Summer, Adenine")
-	(":|" "Young Yang, Static,   Autumn, Guanine"))
+    ("::" "Old Yin,    Changing, Winter, Thymine"))
   "Interpretation of the 'bi-grams'.
 
 In case you don't agree with my interpretations, you can add to, or edit this
@@ -111,14 +117,14 @@ origin.")
 
 ;;* custom trigram
 (defcustom i-ching-trigram-interpretation
-  '((":::" . "坤 The Receptive, Field,    Pure Yin,          SW, 地 Earth,    Devoted,           Receptive")
-	("::|" . "艮 Keeping Still, Bound,    Articulated Limit, NE, 山 Mountain, Resting,           Completion")
-	(":|:" . "坎 The Abysmal,   Gorge,    Axial Rotation,    N,  水 Water,    Dangerous,         In-motion")
-	(":||" . "巽 The Gentle,    Ground,   Softness,          SE, 風 Wind,     Penetrating,       Gentle enterance")
-	("|::" . "震 The Arousing,  Shake,    Spark,             E,  雷 Thunder,  Inciting Movement, Initiative ")
-	("|:|" . "離 The Clinging,  Radience, Cohesion,          S,  火 Fire,     Light Giving,      Clinging ")
-	("||:" . "兌 The Joyous,    Open,     Buoyant Resivoir,  W,  澤 Swamp,    Pleasure,          Tranquil")
-	("|||" . "乾 The Creative,  Force,    Pure Yang,         NW, 天 Sky,      Strong,            Creative"))
+  '(("|||" . "乾 The Creative,  Force,    Pure Yang,         NW, 天 Sky,      Strong,            Creative")
+    ("||:" . "兌 The Joyous,    Open,     Buoyant Resivoir,  W,  澤 Swamp,    Pleasure,          Tranquil")
+    ("|:|" . "離 The Clinging,  Radience, Cohesion,          S,  火 Fire,     Light Giving,      Clinging")
+    ("|::" . "震 The Arousing,  Shake,    Spark,             E,  雷 Thunder,  Inciting Movement, Initiative")
+    (":||" . "巽 The Gentle,    Ground,   Softness,          SE, 風 Wind,     Penetrating,       Gentle enterance")
+    (":|:" . "坎 The Abysmal,   Gorge,    Axial Rotation,    N,  水 Water,    Dangerous,         In-motion")
+    ("::|" . "艮 Keeping Still, Bound,    Articulated Limit, NE, 山 Mountain, Resting,           Completion")
+    (":::" . "坤 The Receptive, Field,    Pure Yin,          SW, 地 Earth,    Devoted,           Receptive"))
   "Interpretation of the Trigrams.
 
 Just in case you don't agree with my interpretation, you can edit this variable
@@ -830,6 +836,28 @@ The full interpretation is the interpretation of a hex, plus its components."
   (format "%s - %s"
 		  (car (apply 'i-ching-hexagram hexagram))
 		  (cdr (apply 'i-ching-hexagram hexagram))))
+
+;;* display
+(defun i-ching-lookup-unicode (ascii interpretations start-code)
+  "Helper function to turn ASCII into a unicode string.
+
+Looks it up in INTERPRETATIONS and gets the unicode codepoint from START-CODE."
+  (let ((number (position ascii interpretations :test
+                          (lambda (_ interpretation)
+                            (equal ascii (car interpretation))))))
+    (char-to-string (+ start-code number))))
+
+;;* display
+(defun i-ching-ascii-to-unicode (ascii)
+  "Turn a given ASCII representation into a unicode character."
+  (case (length ascii)
+    ;; We rely on the interpretation lists being in the same order as the
+    ;; characters appear in the Unicode standard.
+    (1 (i-ching-lookup-unicode ascii '(("|") (":")) ?⚊))
+    (2 (i-ching-lookup-unicode ascii i-ching-bigram-interpretation ?⚌))
+    (3 (i-ching-lookup-unicode ascii i-ching-trigram-interpretation ?☰))
+    (6 (i-ching-lookup-unicode ascii i-ching-hexagram-interpretation ?䷀))
+    (error "Unknown hexagram format: %s" hex)))
 
 ;;* display
 (defun i-ching-number-to-ascii (hex)
