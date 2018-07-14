@@ -1,6 +1,5 @@
 ;;; i-ching.el --- Cast an i-ching, and come up with a hexagram.
-(defconst i-ching-version "0.3")
-;; Copyright (c)2008 Jonathan Arkell. (by)(nc)(sa)  Some rights reserved.
+;; Copyright (c) 2008 Jonathan Arkell. (by)(nc)(sa)  Some rights reserved.
 ;; Author: Jonathan Arkell <jonnay@jonnay.net>
 ;; Yarrow method contributed by Cliff Rodgers (c) 2012
 
@@ -22,9 +21,11 @@
 ;; Hexigram Interpretations are from:
 ;; http://en.wikipedia.org/wiki/I_Ching_hexagrams
 
+(defconst i-ching-version "0.4")
+
 ;;; Commentary:
 (defgroup i-ching '()
-  "This package will show you an iching hexigram, and give you the
+  "This package will show you an i-ching hexigram, and give you the
 translation from the i-ching.
 
 You can even plug in your own randomizer function, and/or hexagram
@@ -46,6 +47,7 @@ a hexagram.")
 ;; - buffer method
 
 ;;; CHANGELOG:
+;; v 0.4 - unicode rendering
 ;; v 0.3 - yarrow method
 ;; v 0.2 - Hexagram lookup
 ;;       - Added Translated Judgment and commentary
@@ -767,6 +769,8 @@ nth-line is the commentary on changing lines."
   (pop-to-buffer (get-buffer-create "*i-ching*"))
   (toggle-read-only 0)
   (erase-buffer)
+  (local-set-key (kbd "q") 'bury-buffer)
+  (local-set-key (kbd "g") 'i-ching-cast)
   (let* ((hexagram (i-ching-cast-hexagram))
 		 (changing (> (apply 'max hexagram) 1))
 		 (change (i-ching-change-hexagram hexagram))
@@ -1101,6 +1105,7 @@ I do not think this is traditional in the i-ching."
 
 ;;* cast yarrow
 (defun i-ching-yarrow-caster ()
+  "Cast the i-ching using the yarrow method."
   (list (i-ching-yarrow-helper)
         (i-ching-yarrow-helper)
         (i-ching-yarrow-helper)
@@ -1116,8 +1121,7 @@ I do not think this is traditional in the i-ching."
 
 ;;* cast yarrow
 (defun i-ching-yarrow-split-piles (stalks)
-  "Splits the stalks into the 3 necessary piles to determine the
-kua or line."
+  "Splits the STALKS into the 3 necessary piles to determine the kua or line."
   (let* ((remainder 0)
          (first-pile 0)
          (second-pile 0)
