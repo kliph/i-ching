@@ -789,7 +789,7 @@ nth-line is the commentary on changing lines."
 	(insert (i-ching-hexagram-string (i-ching-correctness-hexagram hexagram)))
 	(insert "\n\n")
 	(i-ching-title "Correspondence Trigram")
-	(insert (format "%s" (apply 'i-ching-trigram (i-ching-correspond-trigram hexagram)))))
+    (insert (i-ching-hexagram-string (i-ching-correspond-trigram hexagram))))
   (goto-char (point-min))
   (toggle-read-only 1))
 
@@ -833,9 +833,11 @@ The full interpretation is the interpretation of a hex, plus its components."
 ;;* display
 (defun i-ching-hexagram-string (hexagram)
   "Return a nicely formatted string from HEXAGRAM."
-  (format "%s - %s"
-		  (car (apply 'i-ching-hexagram hexagram))
-		  (cdr (apply 'i-ching-hexagram hexagram))))
+  (let ((hex (apply 'i-ching-ngram hexagram)))
+    (format "%s - %s" (if i-ching-render-unicode-p
+                          (i-ching-ascii-to-unicode (car hex))
+                        (car hex))
+            (cdr hex))))
 
 ;;* display
 (defun i-ching-lookup-unicode (ascii interpretations start-code)
@@ -898,20 +900,18 @@ O = 9 (3 internally)"
 ;;* display
 (defun i-ching-hexagram-components (hex)
   "Return a textual representaiton of the breakdown of hexagram HEX."
-  (format (concat (propertize "Trigrams:\n"
-							  'face "i-ching-subtitle-face")
-				  " %s\n %s\n\n"
-				  (propertize "Bigrams:\n"
-							  'face "i-ching-subtitle-face")
-				  " %s\n %s\n %s\n")
-		  (i-ching-trigram (fourth hex) (fifth hex) (sixth hex))
-		  (i-ching-trigram (first hex) (second hex) (third hex))
-		  (i-ching-bigram (sixth hex)  (fifth hex))
-		  (i-ching-bigram (fourth hex) (third hex))
-		  (i-ching-bigram (second hex) (first hex))))
-
-(when nil
-	  (i-ching-hexagram-components (list 1 2 1 0 3 1)))
+  (apply 'format
+         (concat (propertize "Trigrams:\n" 'face "i-ching-subtitle-face")
+                 " %s\n %s\n\n"
+                 (propertize "Bigrams:\n" 'face "i-ching-subtitle-face")
+                 " %s\n %s\n %s\n")
+         (mapcar 'i-ching-hexagram-string
+          (list
+           (list (fourth hex) (fifth hex) (sixth hex)) ; trigrams
+           (list (first hex) (second hex) (third hex))
+           (list (sixth hex)  (fifth hex)) ; bigrams
+           (list (fourth hex) (third hex))
+           (list (second hex) (first hex))))))
 
 ;;* unigram boolean
 (defun i-ching-not (a)
@@ -974,10 +974,14 @@ Note that this operation will destroy any changing data."
   "Take 6 lines (A B C D E F) and return a hexagram."
   (assoc (i-ching-number-to-ascii (list a b c d e f))
 		 i-ching-hexagram-interpretation))
-(when nil
-	  (i-ching-number-to-ascii (list 1 2 0 1 3 2))
-	  (i-ching-hexagram 0 1 0 1 1 0)
-	  (i-ching-trigram 1 1 1))
+
+;;* ngram
+(defun i-ching-ngram (&rest lines)
+  "Take 6, 3, or 2 LINES and return a hexagram, trigram, or bigram."
+  (case (length lines)
+    (6 (apply 'i-ching-hexagram lines))
+    (3 (apply 'i-ching-trigram lines))
+    (2 (apply 'i-ching-bigram lines))))
 
 ;;* cast interface
 (defun i-ching-cast-hexagram ()
