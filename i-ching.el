@@ -1,6 +1,5 @@
 ;;; i-ching.el --- Cast an i-ching, and come up with a hexagram.
-(defconst i-ching-version "0.3")
-;; Copyright (c)2008 Jonathan Arkell. (by)(nc)(sa)  Some rights reserved.
+;; Copyright (c) 2008 Jonathan Arkell. (by)(nc)(sa)  Some rights reserved.
 ;; Author: Jonathan Arkell <jonnay@jonnay.net>
 ;; Yarrow method contributed by Cliff Rodgers (c) 2012
 
@@ -22,9 +21,11 @@
 ;; Hexigram Interpretations are from:
 ;; http://en.wikipedia.org/wiki/I_Ching_hexagrams
 
+(defconst i-ching-version "0.4")
+
 ;;; Commentary:
 (defgroup i-ching '()
-  "This package will show you an iching hexigram, and give you the
+  "This package will show you an i-ching hexigram, and give you the
 translation from the i-ching.
 
 You can even plug in your own randomizer function, and/or hexagram
@@ -46,6 +47,7 @@ a hexagram.")
 ;; - buffer method
 
 ;;; CHANGELOG:
+;; v 0.4 - unicode rendering
 ;; v 0.3 - yarrow method
 ;; v 0.2 - Hexagram lookup
 ;;       - Added Translated Judgment and commentary
@@ -95,12 +97,18 @@ example."
   :type 'function
   :group 'i-ching)
 
+;;* custom rendering
+(defcustom i-ching-render-unicode-p t
+  "When non-nil, render hexagrams, trigrams, and bigrams as unicode."
+  :type 'boolean
+  :group 'i-ching)
+
 ;;* custom bigram
 (defcustom i-ching-bigram-interpretation
-  '(("::" "Old Yin,    Changing, Winter, Thymine")
+  '(("||" "Old Yang,   Changing, Summer, Adenine")
+    (":|" "Young Yang, Static,   Autumn, Guanine")
     ("|:" "Young Yin,  Static,   Spring, Cytosine")
-	("||" "Old Yang,   Changing, Summer, Adenine")
-	(":|" "Young Yang, Static,   Autumn, Guanine"))
+    ("::" "Old Yin,    Changing, Winter, Thymine"))
   "Interpretation of the 'bi-grams'.
 
 In case you don't agree with my interpretations, you can add to, or edit this
@@ -111,14 +119,14 @@ origin.")
 
 ;;* custom trigram
 (defcustom i-ching-trigram-interpretation
-  '((":::" . "坤 The Receptive, Field,    Pure Yin,          SW, 地 Earth,    Devoted,           Receptive")
-	("::|" . "艮 Keeping Still, Bound,    Articulated Limit, NE, 山 Mountain, Resting,           Completion")
-	(":|:" . "坎 The Abysmal,   Gorge,    Axial Rotation,    N,  水 Water,    Dangerous,         In-motion")
-	(":||" . "巽 The Gentle,    Ground,   Softness,          SE, 風 Wind,     Penetrating,       Gentle enterance")
-	("|::" . "震 The Arousing,  Shake,    Spark,             E,  雷 Thunder,  Inciting Movement, Initiative ")
-	("|:|" . "離 The Clinging,  Radience, Cohesion,          S,  火 Fire,     Light Giving,      Clinging ")
-	("||:" . "兌 The Joyous,    Open,     Buoyant Resivoir,  W,  澤 Swamp,    Pleasure,          Tranquil")
-	("|||" . "乾 The Creative,  Force,    Pure Yang,         NW, 天 Sky,      Strong,            Creative"))
+  '(("|||" . "乾 The Creative,  Force,    Pure Yang,         NW, 天 Sky,      Strong,            Creative")
+    ("||:" . "兌 The Joyous,    Open,     Buoyant Resivoir,  W,  澤 Swamp,    Pleasure,          Tranquil")
+    ("|:|" . "離 The Clinging,  Radience, Cohesion,          S,  火 Fire,     Light Giving,      Clinging")
+    ("|::" . "震 The Arousing,  Shake,    Spark,             E,  雷 Thunder,  Inciting Movement, Initiative")
+    (":||" . "巽 The Gentle,    Ground,   Softness,          SE, 風 Wind,     Penetrating,       Gentle enterance")
+    (":|:" . "坎 The Abysmal,   Gorge,    Axial Rotation,    N,  水 Water,    Dangerous,         In-motion")
+    ("::|" . "艮 Keeping Still, Bound,    Articulated Limit, NE, 山 Mountain, Resting,           Completion")
+    (":::" . "坤 The Receptive, Field,    Pure Yin,          SW, 地 Earth,    Devoted,           Receptive"))
   "Interpretation of the Trigrams.
 
 Just in case you don't agree with my interpretation, you can edit this variable
@@ -761,6 +769,8 @@ nth-line is the commentary on changing lines."
   (pop-to-buffer (get-buffer-create "*i-ching*"))
   (toggle-read-only 0)
   (erase-buffer)
+  (local-set-key (kbd "q") 'bury-buffer)
+  (local-set-key (kbd "g") 'i-ching-cast)
   (let* ((hexagram (i-ching-cast-hexagram))
 		 (changing (> (apply 'max hexagram) 1))
 		 (change (i-ching-change-hexagram hexagram))
@@ -783,7 +793,7 @@ nth-line is the commentary on changing lines."
 	(insert (i-ching-hexagram-string (i-ching-correctness-hexagram hexagram)))
 	(insert "\n\n")
 	(i-ching-title "Correspondence Trigram")
-	(insert (format "%s" (apply 'i-ching-trigram (i-ching-correspond-trigram hexagram)))))
+    (insert (i-ching-hexagram-string (i-ching-correspond-trigram hexagram))))
   (goto-char (point-min))
   (toggle-read-only 1))
 
@@ -827,9 +837,33 @@ The full interpretation is the interpretation of a hex, plus its components."
 ;;* display
 (defun i-ching-hexagram-string (hexagram)
   "Return a nicely formatted string from HEXAGRAM."
-  (format "%s - %s"
-		  (car (apply 'i-ching-hexagram hexagram))
-		  (cdr (apply 'i-ching-hexagram hexagram))))
+  (let ((hex (apply 'i-ching-ngram hexagram)))
+    (format "%s - %s" (if i-ching-render-unicode-p
+                          (i-ching-ascii-to-unicode (car hex))
+                        (car hex))
+            (cdr hex))))
+
+;;* display
+(defun i-ching-lookup-unicode (ascii interpretations start-code)
+  "Helper function to turn ASCII into a unicode string.
+
+Looks it up in INTERPRETATIONS and gets the unicode codepoint from START-CODE."
+  (let ((number (position ascii interpretations :test
+                          (lambda (_ interpretation)
+                            (equal ascii (car interpretation))))))
+    (char-to-string (+ start-code number))))
+
+;;* display
+(defun i-ching-ascii-to-unicode (ascii)
+  "Turn a given ASCII representation into a unicode character."
+  (case (length ascii)
+    ;; We rely on the interpretation lists being in the same order as the
+    ;; characters appear in the Unicode standard.
+    (1 (i-ching-lookup-unicode ascii '(("|") (":")) ?⚊))
+    (2 (i-ching-lookup-unicode ascii i-ching-bigram-interpretation ?⚌))
+    (3 (i-ching-lookup-unicode ascii i-ching-trigram-interpretation ?☰))
+    (6 (i-ching-lookup-unicode ascii i-ching-hexagram-interpretation ?䷀))
+    (error "Unknown hexagram format: %s" hex)))
 
 ;;* display
 (defun i-ching-number-to-ascii (hex)
@@ -870,20 +904,18 @@ O = 9 (3 internally)"
 ;;* display
 (defun i-ching-hexagram-components (hex)
   "Return a textual representaiton of the breakdown of hexagram HEX."
-  (format (concat (propertize "Trigrams:\n"
-							  'face "i-ching-subtitle-face")
-				  " %s\n %s\n\n"
-				  (propertize "Bigrams:\n"
-							  'face "i-ching-subtitle-face")
-				  " %s\n %s\n %s\n")
-		  (i-ching-trigram (fourth hex) (fifth hex) (sixth hex))
-		  (i-ching-trigram (first hex) (second hex) (third hex))
-		  (i-ching-bigram (sixth hex)  (fifth hex))
-		  (i-ching-bigram (fourth hex) (third hex))
-		  (i-ching-bigram (second hex) (first hex))))
-
-(when nil
-	  (i-ching-hexagram-components (list 1 2 1 0 3 1)))
+  (apply 'format
+         (concat (propertize "Trigrams:\n" 'face "i-ching-subtitle-face")
+                 " %s\n %s\n\n"
+                 (propertize "Bigrams:\n" 'face "i-ching-subtitle-face")
+                 " %s\n %s\n %s\n")
+         (mapcar 'i-ching-hexagram-string
+          (list
+           (list (fourth hex) (fifth hex) (sixth hex)) ; trigrams
+           (list (first hex) (second hex) (third hex))
+           (list (sixth hex)  (fifth hex)) ; bigrams
+           (list (fourth hex) (third hex))
+           (list (second hex) (first hex))))))
 
 ;;* unigram boolean
 (defun i-ching-not (a)
@@ -946,10 +978,14 @@ Note that this operation will destroy any changing data."
   "Take 6 lines (A B C D E F) and return a hexagram."
   (assoc (i-ching-number-to-ascii (list a b c d e f))
 		 i-ching-hexagram-interpretation))
-(when nil
-	  (i-ching-number-to-ascii (list 1 2 0 1 3 2))
-	  (i-ching-hexagram 0 1 0 1 1 0)
-	  (i-ching-trigram 1 1 1))
+
+;;* ngram
+(defun i-ching-ngram (&rest lines)
+  "Take 6, 3, or 2 LINES and return a hexagram, trigram, or bigram."
+  (case (length lines)
+    (6 (apply 'i-ching-hexagram lines))
+    (3 (apply 'i-ching-trigram lines))
+    (2 (apply 'i-ching-bigram lines))))
 
 ;;* cast interface
 (defun i-ching-cast-hexagram ()
@@ -1069,6 +1105,7 @@ I do not think this is traditional in the i-ching."
 
 ;;* cast yarrow
 (defun i-ching-yarrow-caster ()
+  "Cast the i-ching using the yarrow method."
   (list (i-ching-yarrow-helper)
         (i-ching-yarrow-helper)
         (i-ching-yarrow-helper)
@@ -1084,8 +1121,7 @@ I do not think this is traditional in the i-ching."
 
 ;;* cast yarrow
 (defun i-ching-yarrow-split-piles (stalks)
-  "Splits the stalks into the 3 necessary piles to determine the
-kua or line."
+  "Splits the STALKS into the 3 necessary piles to determine the kua or line."
   (let* ((remainder 0)
          (first-pile 0)
          (second-pile 0)
